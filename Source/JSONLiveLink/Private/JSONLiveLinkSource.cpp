@@ -249,9 +249,9 @@ void FJSONLiveLinkSource::HandleReceivedData(TSharedPtr<TArray<uint8>, ESPMode::
 					}
 					else if (RotationArray->Num() == 3) {
 						bRotationIsQuat = false;
-						double Pitch = (*RotationArray)[0]->AsNumber();
-						double Yaw = (*RotationArray)[1]->AsNumber();
-						double Roll = (*RotationArray)[2]->AsNumber();
+						double Roll = (*RotationArray)[0]->AsNumber();
+						double Pitch = (*RotationArray)[1]->AsNumber();
+						double Yaw = (*RotationArray)[2]->AsNumber();
 						BoneRotator = FRotator(Pitch, Yaw, Roll);
 					}
 					else {
