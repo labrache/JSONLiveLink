@@ -236,14 +236,27 @@ void FJSONLiveLinkSource::HandleReceivedData(TSharedPtr<TArray<uint8>, ESPMode::
 
 				const TArray<TSharedPtr<FJsonValue>>* RotationArray;
 				FQuat BoneQuat;
-				if (BoneObject->TryGetArrayField(TEXT("Rotation"), RotationArray)
-					&& RotationArray->Num() == 4) // X, Y, Z, W
+				FRotator BoneRotator;
+				bool bRotationIsQuat = true;
+				if (BoneObject->TryGetArrayField(TEXT("Rotation"), RotationArray))
 				{
-					double X = (*RotationArray)[0]->AsNumber();
-					double Y = (*RotationArray)[1]->AsNumber();
-					double Z = (*RotationArray)[2]->AsNumber();
-					double W = (*RotationArray)[3]->AsNumber();
-					BoneQuat = FQuat(X, Y, Z, W);
+					if (RotationArray->Num() == 4) {  // X, Y, Z, W
+						double X = (*RotationArray)[0]->AsNumber();
+						double Y = (*RotationArray)[1]->AsNumber();
+						double Z = (*RotationArray)[2]->AsNumber();
+						double W = (*RotationArray)[3]->AsNumber();
+						BoneQuat = FQuat(X, Y, Z, W);
+					}
+					else if (RotationArray->Num() == 3) {
+						bRotationIsQuat = false;
+						double Pitch = (*RotationArray)[0]->AsNumber();
+						double Yaw = (*RotationArray)[1]->AsNumber();
+						double Roll = (*RotationArray)[2]->AsNumber();
+						BoneRotator = FRotator(Pitch, Yaw, Roll);
+					}
+					else {
+						return;
+					}
 				}
 				else
 				{
@@ -266,8 +279,12 @@ void FJSONLiveLinkSource::HandleReceivedData(TSharedPtr<TArray<uint8>, ESPMode::
 					// Invalid Json Format
 					return;
 				}
-
-				FrameData.Transforms[BoneIdx] = FTransform(BoneQuat, BoneLocation, BoneScale);
+				if (bRotationIsQuat) {
+					FrameData.Transforms[BoneIdx] = FTransform(BoneQuat, BoneLocation, BoneScale);
+				}
+				else {
+					FrameData.Transforms[BoneIdx] = FTransform(BoneRotator, BoneLocation, BoneScale);
+				}
 			}
 
 			Client->PushSubjectFrameData_AnyThread({SourceGuid, SubjectName}, MoveTemp(FrameDataStruct));
